@@ -2,87 +2,45 @@ version: '3.8'
 
 services:
 
-  dev:
-    container_name: dev
-    build:
-      context: .
-      target: development # the `As` in Dockerfile
-    command: npm run start:dev
-    volumes:
-      # hostPath:containerPath:mode
-      # when file on host machine is changed, update files in container accordingly
-      - .:/usr/src/app
-      # anonymous volume
-      # prevent node_modules in container to be overwritten
-      - /usr/src/app/node_modules
-    ports:
-      - ${SERVER_PORT}:${SERVER_PORT} # HOST_PORT:CONTAINER_PORT
-      - 9229:9229
-    env_file:
-      - .env
-    # each service has own network, so create own network for them to communicate
+  postgres:
+    container_name: postgres
+    image: postgres:14
+    restart: always
     networks:
       - webnet
-    depends_on:
-      - redis
-      - postgres
-
-  # TODO: add production service
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PG_DATA: /var/lib/postgresql/data
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
 
   redis:
     container_name: redis
-    image: redis:7-alpine
+    image: redis:7
     networks:
       - webnet
     volumes:
-      - redisdata:/data
+      - redis:/data
     ports:
-      - '6379:6379'
+      - 6379:6379
 
   rcli:
     container_name: rcli
-    image: redis:7-alpine
+    image: redis:7
     networks:
       - webnet
     links:
       - redis
     command: redis-cli -h redis
 
-  postgres:
-    container_name: postgres
-    image: postgres:14-alpine
-    restart: always
-    networks:
-      - webnet
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-      # where postgres should keep stored data
-      PG_DATA: /var/lib/postgresql/data
-    volumes:
-      # volumeName:containerPath:mode
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
-
 networks:
   webnet:
 
-# for data to be persisted even if container restarts/is removed
 volumes:
-  pgdata:
-  redisdata:
+  postgres:
+  redis:
     driver: local
-
-
-
-# ======================>> NOTES <<=
-
-# reference:
-# https://blog.logrocket.com/containerized-development-nestjs-docker/
-
-# adding packages with npm install:
-# docker-compose up --build -V
-# --build makes sure npm install (during build process) is run
-# -V remove any anonymous volumes and create them again
