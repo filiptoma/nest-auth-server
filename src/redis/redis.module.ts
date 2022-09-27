@@ -7,7 +7,16 @@ import * as Redis from 'redis';
     {
       provide: REDIS,
       useFactory: async () => {
-        const url = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+        let redisHost;
+        switch (process.env.NODE_ENV) {
+          case 'development:localhost':
+            redisHost = process.env.REDIS_HOST_LOCAL;
+            break;
+          case 'development:raspberry':
+            redisHost = process.env.REDIS_HOST_PI;
+            break;
+        }
+        const url = `redis://${redisHost}:${process.env.REDIS_PORT}`;
         const client = Redis.createClient({
           url,
           legacyMode: true,
