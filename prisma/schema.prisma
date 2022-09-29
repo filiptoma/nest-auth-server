@@ -6,3 +6,19 @@ datasource db {
     provider = "postgresql"
     url      = env("PRISMA_DATABASE_URL")
 }
+
+model Article {
+    id          Int      @id @default(autoincrement())
+    title       String   @unique
+    description String?
+    body        String
+    published   Boolean  @default(false)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+}
+
+// =====================>> notes <<
+
+// @id - primary key of table
+// @updatedAt - automatically update the field with the current timestamp
+//   whenever an article is modified
